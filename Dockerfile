@@ -50,12 +50,24 @@ RUN mkdir -p /root/ngx_openresty \
  && ln -sf $OPENRESTY_PREFIX/luajit/bin/luajit-* $OPENRESTY_PREFIX/luajit/bin/lua \
  && ln -sf $OPENRESTY_PREFIX/luajit/bin/luajit-* /usr/local/bin/lua \
  && apk del \
-    make gcc musl-dev pcre-dev openssl-dev zlib-dev ncurses-dev readline-dev curl perl \
+    pcre-dev openssl-dev zlib-dev ncurses-dev readline-dev curl perl \
  && apk add \
     libpcrecpp libpcre16 libpcre32 openssl libssl1.0 pcre libgcc libstdc++ \
  && rm -rf /var/cache/apk/* \
  && rm -rf /root/ngx_openresty
 
+RUN apk add --update lua5.1-dev unzip && export C_INCLUDE_PATH=/usr/include/lua5.1/
+
+RUN wget -qO- http://luarocks.org/releases/luarocks-2.3.0.tar.gz | tar xvz -C /tmp/ \
+&& cd /tmp/luarocks-* \
+&& ./configure --with-lua=/opt/openresty/luajit \
+   --with-lua-include=/opt/openresty/luajit/include/luajit-2.1 \
+   --with-lua-lib=/opt/openresty/lualib \
+&& make bootstrap \
+&& rm -rf /tmp/luarocks-*
+RUN luarocks install lua-cjson
+RUN apk del \
+   lua5.1-dev unzip make gcc musl-dev
 WORKDIR $NGINX_PREFIX/
 
 CMD ["nginx", "-g", "daemon off; error_log /dev/stderr info;"]
